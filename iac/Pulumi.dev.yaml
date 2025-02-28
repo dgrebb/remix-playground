@@ -1,0 +1,7 @@
+config:
+  aws:region: us-east-1
+  remix-ai-chat:environment: dev
+  remix-ai-chat:dbUser:
+    secure: AAABAMUGjL3Yz+A0VxVBHg==
+  remix-ai-chat:dbPassword:
+    secure: AAABAM/xJYajV9BKFdmJ0g== 
