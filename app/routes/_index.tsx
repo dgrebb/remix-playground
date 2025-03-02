@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
+    { title: "Process Designer" },
     { name: "description", content: "Welcome to Remix!" },
   ];
 };
@@ -11,8 +11,7 @@ export const meta: MetaFunction = () => {
 export default function Index() {
   return (
     <div>
-      <h1>Home</h1>
-      <Button>hi</Button>
+      <h1>Welcome!</h1>
     </div>
   );
 }

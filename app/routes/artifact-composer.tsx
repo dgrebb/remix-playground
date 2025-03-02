@@ -1,51 +1,40 @@
-import { useState, useEffect, useRef, useMemo } from "react";
 import {
   json,
-  redirect,
   type ActionFunctionArgs,
-  type LoaderFunctionArgs,
+  type LoaderFunctionArgs
 } from "@remix-run/node";
 import {
-  Form,
+  Link,
   useActionData,
   useLoaderData,
   useNavigation,
-  Link,
-  useSubmit,
+  useSubmit
 } from "@remix-run/react";
-import { Button } from "~/components/ui/button";
-import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
-import { parseMarkdown } from "~/utils/markdown-parser";
-import { FormRenderer } from "~/components/form-renderer";
-import { getSession, commitSession } from "~/utils/session.server";
 import {
-  PencilIcon,
-  EyeIcon,
-  SaveIcon,
   DownloadIcon,
-  UploadIcon,
+  EyeIcon,
   FileTextIcon,
-  ChevronDown,
-  ChevronUp,
-  BookOpenIcon,
   HelpCircleIcon,
+  PencilIcon,
+  SaveIcon,
+  UploadIcon
 } from "lucide-react";
-import { useDebounce } from "~/hooks/use-debounce";
-import { saveAs } from "file-saver";
-import { Textarea } from "~/components/ui/textarea";
-import { PromptPreview } from "~/components/prompt-preview";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "remix-themes";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import { CustomPopover } from "~/components/custom-popover";
+import { FormRenderer } from "~/components/form-renderer";
+import { PromptPreview } from "~/components/prompt-preview";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
+import { Textarea } from "~/components/ui/textarea";
+import { useDebounce } from "~/hooks/use-debounce";
+import { parseMarkdown } from "~/utils/markdown-parser";
+import { commitSession, getSession } from "~/utils/session.server";
 
 // Local storage key for auto-save
-const LOCAL_STORAGE_KEY = "form-builder-markdown";
-const FORM_DATA_KEY = "form-builder-data";
+const LOCAL_STORAGE_KEY = "artifact-composer-markdown";
+const FORM_DATA_KEY = "artifact-composer-data";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
@@ -105,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
   return json({ success: false });
 }
 
-export default function FormBuilder() {
+export default function ArtifactComposer() {
   const { initialMarkdown, savedFormData } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -182,7 +171,7 @@ export default function FormBuilder() {
       formData.append("markdown", debouncedMarkdown);
 
       // Use fetch instead of submit to avoid navigation state changes
-      fetch("/form-builder", {
+      fetch("/artifact-composer", {
         method: "POST",
         body: formData,
       }).then(() => {
@@ -378,7 +367,7 @@ export default function FormBuilder() {
     form.append("formData", JSON.stringify(formData));
 
     // Use fetch to submit the form
-    fetch("/form-builder", {
+    fetch("/artifact-composer", {
       method: "POST",
       body: form,
     });
@@ -409,7 +398,6 @@ export default function FormBuilder() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Form Builder</h1>
         <div className="flex items-center space-x-4">
           {/* Edit mode toggle */}
           <div className="flex items-center space-x-2">
@@ -477,15 +465,14 @@ export default function FormBuilder() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left panel: Markdown editor in edit mode, Prompt preview in view mode */}
         <div
-          className={`${
-            theme === "dark" ? "bg-slate-800" : "bg-slate-50"
-          } p-4 rounded-lg shadow-sm border border-border`}
+          className={`${theme === "dark" ? "bg-slate-800" : "bg-slate-50"
+            } p-4 rounded-lg shadow-sm border border-border`}
         >
           {editMode ? (
             // Markdown Editor (edit mode)
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold">Markdown Editor</h2>
+                <h2 className="text-xl font-semibold">Artifact Composer</h2>
 
                 {/* Syntax Guide Custom Popover */}
                 <CustomPopover
@@ -595,11 +582,10 @@ export default function FormBuilder() {
 
               <Textarea
                 name="markdown"
-                className={`w-full h-96 p-2 border font-mono ${
-                  theme === "dark"
-                    ? "bg-slate-900 text-slate-100"
-                    : "bg-white text-slate-800"
-                }`}
+                className={`w-full h-96 p-2 border font-mono ${theme === "dark"
+                  ? "bg-slate-900 text-slate-100"
+                  : "bg-white text-slate-800"
+                  }`}
                 value={markdown}
                 onChange={(e) => setMarkdown(e.target.value)}
               />
@@ -609,9 +595,8 @@ export default function FormBuilder() {
             <div>
               <h2 className="text-xl font-semibold mb-2">LLM Prompt</h2>
               <div
-                className={`${
-                  theme === "dark" ? "bg-slate-700" : "bg-white"
-                } border rounded-lg p-4 min-h-96 overflow-auto shadow-sm`}
+                className={`${theme === "dark" ? "bg-slate-700" : "bg-white"
+                  } border rounded-lg p-4 min-h-96 overflow-auto shadow-sm`}
               >
                 <PromptPreview
                   fields={formStructure}
@@ -628,9 +613,8 @@ export default function FormBuilder() {
         {/* Right panel: Form preview/renderer */}
         <div>
           <div
-            className={`${
-              theme === "dark" ? "bg-slate-800" : "bg-slate-50"
-            } p-4 rounded-lg shadow-sm border border-border`}
+            className={`${theme === "dark" ? "bg-slate-800" : "bg-slate-50"
+              } p-4 rounded-lg shadow-sm border border-border`}
           >
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl font-semibold">
@@ -652,11 +636,9 @@ export default function FormBuilder() {
             </div>
 
             <div
-              className={`${
-                theme === "dark" ? "bg-slate-700" : "bg-white"
-              } border rounded-lg p-4 ${
-                editMode ? "min-h-96" : ""
-              } overflow-auto shadow-sm`}
+              className={`${theme === "dark" ? "bg-slate-700" : "bg-white"
+                } border rounded-lg p-4 ${editMode ? "min-h-96" : ""
+                } overflow-auto shadow-sm`}
             >
               <FormRenderer
                 formStructure={formStructure}
@@ -680,9 +662,8 @@ export default function FormBuilder() {
       {/* Prompt preview at bottom - only show in edit mode */}
       {editMode && (
         <div
-          className={`${
-            theme === "dark" ? "bg-slate-800" : "bg-slate-50"
-          } rounded-lg shadow-sm border border-border`}
+          className={`${theme === "dark" ? "bg-slate-800" : "bg-slate-50"
+            } rounded-lg shadow-sm border border-border`}
         >
           <PromptPreview
             fields={formStructure}
@@ -701,7 +682,7 @@ export function ErrorBoundary() {
       <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
       <p>Something went wrong while rendering the form builder.</p>
       <p>Please check your markdown syntax and try again.</p>
-      <Link to="/form-builder" className="mt-4 inline-block">
+      <Link to="/artifact-composer" className="mt-4 inline-block">
         <Button>Try Again</Button>
       </Link>
     </div>
