@@ -27,6 +27,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     name: string,
     description: string
   ): Project => {
+    // Create a new project with a UUID and timestamps
     const now = new Date();
     const project: Project = {
       uuid: uuidv4(),
@@ -36,6 +37,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       createdAt: now,
       updatedAt: now,
     };
+
+    // Update the current project state
     setCurrentProject(project);
     return project;
   };
@@ -44,17 +47,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setCurrentProject(null);
   };
 
+  const value = {
+    currentProject,
+    setCurrentProject,
+    createProject,
+    resetProject,
+  };
+
   return (
-    <ProjectContext.Provider
-      value={{
-        currentProject,
-        setCurrentProject,
-        createProject,
-        resetProject,
-      }}
-    >
-      {children}
-    </ProjectContext.Provider>
+    <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
   );
 }
 

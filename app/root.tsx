@@ -25,6 +25,10 @@ export const links: LinksFunction = () => [
     rel: "icon",
     href: `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>`,
   },
+  {
+    rel: "stylesheet",
+    href: "https://cdn.jsdelivr.net/npm/modern-normalize@2.0.0/modern-normalize.min.css",
+  },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -47,10 +51,10 @@ function App() {
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
       </head>
-      <body className="min-h-screen bg-background text-foreground">
-        <div className="container mx-auto p-4">
+      <body className="min-h-screen bg-background p-6 text-foreground antialiased">
+        <div className="max-w-7xl mx-auto space-y-8">
           <Header />
-          <main className="mt-8">
+          <main>
             <Outlet />
           </main>
         </div>
@@ -65,7 +69,7 @@ export default function AppWithProviders() {
   const data = useLoaderData<typeof loader>();
 
   return (
-    <ThemeProvider specifiedTheme={data.theme} themeAction="/api/theme">
+    <ThemeProvider specifiedTheme={data.theme} themeAction="/resources/theme">
       <ProjectProvider>
         <App />
       </ProjectProvider>
