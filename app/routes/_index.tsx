@@ -1,17 +1,20 @@
 import type { MetaFunction } from "@remix-run/node";
-import { Button } from "~/components/ui/button";
+import { CreateProjectForm } from "~/components/Forms/CreateProjectForm";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Process Designer" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Create Project" },
+    { name: "description", content: "Create a new project" },
   ];
 };
 
 export default function Index() {
   return (
-    <div>
-      <h1>Welcome!</h1>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold text-center mb-8">
+        Create a New Project
+      </h1>
+      <CreateProjectForm />
     </div>
   );
 }
