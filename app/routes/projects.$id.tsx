@@ -60,15 +60,24 @@ export default function ProjectDetails() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-6 flex items-center gap-4">
-        <Link
-          to="/debug"
-          className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-        >
-          ← Back to Projects
-        </Link>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/debug"
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+          >
+            ← Back to Projects
+          </Link>
 
-        <h1 className="text-3xl font-bold">Project Details</h1>
+          <h1 className="text-3xl font-bold">Project Details</h1>
+        </div>
+
+        <Link
+          to="/new-project"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          New Project
+        </Link>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all">

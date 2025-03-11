@@ -1,4 +1,8 @@
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import * as schema from "./schema";
 import Database from "better-sqlite3";
+import { resolve } from "path";
+import { v4 as uuidv4 } from "uuid";
 import { join } from "path";
 import fs from "fs";
 
@@ -7,102 +11,239 @@ if (typeof window !== "undefined") {
   throw new Error("This module should only be imported on the server");
 }
 
-// Create the data directory if it doesn't exist
-const dataDir = join(process.cwd(), "data");
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+// Define Project type
+export interface Project {
+  id: number;
+  uuid: string;
+  name: string;
+  description?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 // Get the database path
-const dbPath = join(process.cwd(), "data", "sqlite.db");
+const DB_PATH = resolve(process.cwd(), "data/sqlite.db");
+console.log("Using database at path:", DB_PATH);
+
+// Check if database file exists before connecting
+if (fs.existsSync(DB_PATH)) {
+  const stats = fs.statSync(DB_PATH);
+  console.log(`✅ Database file exists (${stats.size} bytes)`);
+} else {
+  console.log("⚠️ Database file doesn't exist, will be created");
+
+  // Ensure the data directory exists
+  const dataDir = join(process.cwd(), "data");
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log(`📁 Created data directory: ${dataDir}`);
+  }
+}
 
 // Initialize the database connection
-export const sqlite = new Database(dbPath);
+export const sqlite = new Database(DB_PATH);
+export const db = drizzle(sqlite, { schema });
 
-// Helper functions
-export function initializeDatabase() {
-  // Create projects table if it doesn't exist
+// For debugging - drop and recreate the table
+export function resetDatabase() {
+  try {
+    console.log("🔄 Resetting database schema...");
+    // Drop the existing table
+    sqlite.exec(`DROP TABLE IF EXISTS projects`);
+    console.log("✅ Dropped existing projects table");
+
+    // Recreate the table with the correct schema
+    sqlite.exec(`
+      CREATE TABLE projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    console.log("✅ Recreated projects table");
+    return true;
+  } catch (error) {
+    console.error("❌ Error resetting database:", error);
+    return false;
+  }
+}
+
+// Uncomment the next line if you need to reset the database during development
+// resetDatabase();
+
+// Initialize the database schema
+try {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS projects (
-      id TEXT NOT NULL,
-      uuid TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
       description TEXT,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
   `);
-
-  console.log("✅ Database initialized successfully");
+  console.log("✅ Database schema initialized");
+} catch (error) {
+  console.error("❌ Error initializing database schema:", error);
 }
 
-// Helper function to get all projects
-export function getAllProjects() {
-  return sqlite.prepare(`SELECT * FROM projects`).all();
+// Helper function to convert snake_case keys to camelCase
+function snakeToCamel(obj: Record<string, any>): Record<string, any> {
+  if (!obj || typeof obj !== "object") {
+    console.error("Expected an object in snakeToCamel, received:", obj);
+    return {};
+  }
+
+  const newObj: Record<string, any> = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      // Convert snake_case to camelCase
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
+        letter.toUpperCase()
+      );
+      newObj[camelKey] = obj[key];
+    }
+  }
+  return newObj;
 }
 
-// Helper function to get a project by ID
-export function getProjectById(identifier: string) {
+// Helper function to get all projects with proper camelCase property names
+export async function getAllProjects(): Promise<Project[]> {
   try {
-    // First try to find by UUID
-    const byUuid = sqlite
-      .prepare(
-        `
-      SELECT * FROM projects WHERE uuid = ?
-    `
-      )
-      .get(identifier);
+    // Use raw SQL to avoid issues with drizzle property mapping
+    const projects = sqlite.prepare("SELECT * FROM projects").all() as any[];
 
-    if (byUuid) return byUuid;
-
-    // If not found, try to find by ID
-    return sqlite
-      .prepare(
-        `
-      SELECT * FROM projects WHERE id = ?
-    `
-      )
-      .get(identifier);
+    // Convert properties from snake_case to camelCase
+    return projects.map((project) => snakeToCamel(project) as Project);
   } catch (error) {
-    console.error("Error fetching project:", error);
+    console.error("Error fetching projects:", error);
+    return [];
+  }
+}
+
+// Helper function to get a single project by ID with proper camelCase property names
+export async function getProjectById(
+  id: number | string
+): Promise<Project | null> {
+  try {
+    let project: any = null;
+
+    console.log(`🔍 Looking up project with ID: "${id}"`);
+
+    // Try to convert to number (for DB id lookups)
+    if (typeof id === "string" && /^\d+$/.test(id)) {
+      const projectId = parseInt(id, 10);
+      project = sqlite
+        .prepare("SELECT * FROM projects WHERE id = ?")
+        .get(projectId);
+    }
+
+    // If not found by ID or not a numeric string, try UUID lookup
+    if (!project && typeof id === "string") {
+      project = sqlite.prepare("SELECT * FROM projects WHERE uuid = ?").get(id);
+    }
+
+    if (!project) {
+      console.log(`❌ Project not found with ID: "${id}"`);
+      return null;
+    }
+
+    console.log(`✅ Found project with id/uuid: "${id}"`);
+
+    // Convert properties from snake_case to camelCase
+    return snakeToCamel(project) as Project;
+  } catch (error) {
+    console.error(`Error fetching project with ID ${id}:`, error);
     return null;
   }
 }
 
-// Helper function to delete a project
-export function deleteProject(uuid: string) {
-  return sqlite.prepare(`DELETE FROM projects WHERE uuid = ?`).run(uuid);
+// Helper function to create a new project with proper database column names
+export async function createProject(
+  name: string,
+  description: string = ""
+): Promise<Project> {
+  try {
+    const uuid = uuidv4();
+    const now = new Date().toISOString();
+
+    // Use a statement without specifying id at all - let SQLite handle it
+    sqlite
+      .prepare(
+        `
+      INSERT INTO projects (uuid, name, description, created_at, updated_at) 
+      VALUES (?, ?, ?, ?, ?)
+    `
+      )
+      .run(uuid, name, description, now, now);
+
+    // Fetch the inserted project by UUID (safer than relying on last_insert_rowid())
+    const result = sqlite
+      .prepare("SELECT * FROM projects WHERE uuid = ?")
+      .get(uuid) as Record<string, any>;
+
+    if (!result) {
+      throw new Error("Failed to retrieve the created project");
+    }
+
+    console.log("✅ Project created:", result);
+
+    // Convert properties from snake_case to camelCase
+    return snakeToCamel(result) as Project;
+  } catch (error) {
+    console.error("Error creating project:", error);
+    throw error;
+  }
 }
 
-// Helper function to delete multiple projects
-export function deleteProjects(uuids: string[]) {
-  // Use placeholders for each UUID
-  const placeholders = uuids.map(() => "?").join(", ");
-  return sqlite
-    .prepare(`DELETE FROM projects WHERE uuid IN (${placeholders})`)
-    .run(...uuids);
+// Insert a project - returns the inserted project
+export function insertProject(name: string, description: string = ""): Project {
+  try {
+    const uuid = uuidv4();
+    const now = new Date().toISOString();
+
+    const result = sqlite
+      .prepare(
+        "INSERT INTO projects (id, uuid, name, description, created_at, updated_at) VALUES (NULL, ?, ?, ?, ?, ?) RETURNING *"
+      )
+      .get(uuid, name, description, now, now) as Record<string, any>;
+
+    console.log(`✅ Inserted project: ${JSON.stringify(result)}`);
+
+    return snakeToCamel(result) as Project;
+  } catch (error) {
+    console.error("❌ Error inserting project:", error);
+    throw error;
+  }
 }
 
-// Helper function to insert a project
-export function insertProject(project: {
-  id: string;
-  uuid: string;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}) {
-  return sqlite
-    .prepare(
-      `INSERT INTO projects (id, uuid, name, description, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      project.id,
-      project.uuid,
-      project.name,
-      project.description,
-      project.createdAt.getTime(),
-      project.updatedAt.getTime()
-    );
+// Delete a project
+export function deleteProject(uuid: string): boolean {
+  try {
+    const result = sqlite
+      .prepare(`DELETE FROM projects WHERE uuid = ?`)
+      .run(uuid);
+    return result.changes > 0;
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    return false;
+  }
+}
+
+// Delete multiple projects
+export function deleteProjects(uuids: string[]): boolean {
+  try {
+    const placeholders = uuids.map(() => "?").join(", ");
+    const result = sqlite
+      .prepare(`DELETE FROM projects WHERE uuid IN (${placeholders})`)
+      .run(...uuids);
+    return result.changes > 0;
+  } catch (error) {
+    console.error("Error deleting multiple projects:", error);
+    return false;
+  }
 }

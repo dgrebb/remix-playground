@@ -29,13 +29,13 @@ export function CreateProjectForm() {
       formData.append("description", description);
 
       // Use Remix's submit function to send data to the server
-      submit(formData, { method: "post" });
+      // Let the server handle the redirect
+      submit(formData, { method: "post", action: "/new-project" });
 
-      // Navigate to the new project page
-      navigate(`/new-project/${id}`);
+      // Don't navigate client-side - let the server redirect
+      // The server will redirect to the correct URL after project creation
     } catch (error) {
       console.error("Failed to create project:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };
