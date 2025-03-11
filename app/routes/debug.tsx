@@ -1,6 +1,7 @@
 import { json } from "@remix-run/node";
-import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import { getAllProjects, sqlite } from "~/lib/db/db.server";
+import TransitionLink from "~/components/TransitionLink";
 
 export async function loader() {
   // Get projects using our helper
@@ -31,7 +32,9 @@ export default function DebugPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Database Debug Panel</h1>
+      <h1 className="text-2xl font-bold mb-6 project-header">
+        Database Debug Panel
+      </h1>
 
       {resetSuccess && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
@@ -42,12 +45,12 @@ export default function DebugPage() {
       <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-semibold">Database Info</h2>
-          <Link
+          <TransitionLink
             to="/debug/reset"
             className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
           >
             Reset Database
-          </Link>
+          </TransitionLink>
         </div>
         <p>
           <strong>Tables:</strong>{" "}
@@ -64,12 +67,12 @@ export default function DebugPage() {
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-4 flex justify-between">
           <span>Projects ({data.projects.length})</span>
-          <Link
+          <TransitionLink
             to="/new-project"
             className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
           >
             Create New Project
-          </Link>
+          </TransitionLink>
         </h2>
 
         {data.projects.length > 0 ? (
@@ -92,17 +95,17 @@ export default function DebugPage() {
                   >
                     <td className="p-2">{project.id}</td>
                     <td className="p-2 font-mono text-xs">{project.uuid}</td>
-                    <td className="p-2">{project.name}</td>
+                    <td className="p-2 project-title">{project.name}</td>
                     <td className="p-2">
                       {new Date(project.createdAt).toLocaleString()}
                     </td>
                     <td className="p-2">
-                      <Link
+                      <TransitionLink
                         to={`/projects/${project.uuid}`}
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 hover:underline transition-link"
                       >
                         View
-                      </Link>
+                      </TransitionLink>
                     </td>
                   </tr>
                 ))}
@@ -112,9 +115,9 @@ export default function DebugPage() {
         ) : (
           <div className="p-4 bg-yellow-50 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded">
             No projects found in database.{" "}
-            <Link to="/new-project" className="underline">
+            <TransitionLink to="/new-project" className="underline">
               Create your first project
-            </Link>
+            </TransitionLink>
             .
           </div>
         )}

@@ -1,6 +1,5 @@
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  Link,
   useLoaderData,
   useRouteError,
   isRouteErrorResponse,
@@ -8,6 +7,7 @@ import {
 import { getProjectById, type Project } from "~/lib/db/db.server";
 import { useProject } from "~/contexts/ProjectContext";
 import { useEffect } from "react";
+import TransitionLink from "~/components/TransitionLink";
 
 // Define the loader data type
 type LoaderData = {
@@ -62,28 +62,28 @@ export default function ProjectDetails() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link
+          <TransitionLink
             to="/debug"
             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           >
             ← Back to Projects
-          </Link>
+          </TransitionLink>
 
-          <h1 className="text-3xl font-bold">Project Details</h1>
+          <h1 className="text-3xl font-bold project-title">{project.name}</h1>
         </div>
 
-        <Link
+        <TransitionLink
           to="/new-project"
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
           New Project
-        </Link>
+        </TransitionLink>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all">
+      <div className="project-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 project-header">
               Project Information
             </h2>
 
@@ -106,7 +106,7 @@ export default function ProjectDetails() {
                 <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
                   Description
                 </label>
-                <p className="mt-1">
+                <p className="mt-1 project-description">
                   {project.description || "No description provided."}
                 </p>
               </div>
@@ -190,7 +190,7 @@ export function ErrorBoundary() {
         <h1 className="text-3xl font-bold mb-2">{heading}</h1>
         <p className="text-lg text-gray-600 dark:text-gray-400">{message}</p>
       </div>
-      <Link
+      <TransitionLink
         to="/debug"
         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 inline-flex items-center"
       >
@@ -207,7 +207,7 @@ export function ErrorBoundary() {
           />
         </svg>
         Return to Project List
-      </Link>
+      </TransitionLink>
     </div>
   );
 }

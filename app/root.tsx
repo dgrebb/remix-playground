@@ -6,6 +6,8 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useLocation,
+  useNavigate,
 } from "@remix-run/react";
 import { LinksFunction, LoaderFunctionArgs, json } from "@remix-run/node";
 import {
@@ -16,8 +18,14 @@ import {
 import { themeSessionResolver } from "./utils/theme.server";
 import { Header } from "./components/Header";
 import { ProjectProvider } from "./contexts/ProjectContext";
+import {
+  ViewTransitionsProvider,
+  supportsViewTransitions,
+} from "~/utils/transitions";
+import { useEffect } from "react";
 
 import "./tailwind.css";
+import "./styles/transitions.css";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -35,12 +43,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { getTheme } = await themeSessionResolver(request);
   return json({
     theme: getTheme(),
+    ENV: {
+      NODE_ENV: process.env.NODE_ENV,
+    },
   });
 }
 
 function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Handle native view transitions on route changes
+  useEffect(() => {
+    // Track path changes for native view transitions
+    if (supportsViewTransitions) {
+      // This allows us to capture clicks on links that are added dynamically
+      document.addEventListener("click", (event) => {
+        const target = event.target as HTMLElement;
+        const anchor = target.closest("a");
+
+        if (
+          anchor &&
+          anchor.href &&
+          anchor.origin === window.location.origin &&
+          !anchor.hasAttribute("download") &&
+          !anchor.hasAttribute("target") &&
+          !event.ctrlKey &&
+          !event.metaKey
+        ) {
+          const newPath = anchor.pathname + anchor.search + anchor.hash;
+          if (location.pathname !== newPath) {
+            event.preventDefault();
+            // @ts-ignore - TypeScript doesn't know about startViewTransition yet
+            document.startViewTransition(() => {
+              navigate(newPath);
+            });
+          }
+        }
+      });
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <html lang="en" className={theme ?? ""}>
@@ -60,6 +104,11 @@ function App() {
         </div>
         <ScrollRestoration />
         <Scripts />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+          }}
+        />
       </body>
     </html>
   );
@@ -71,7 +120,9 @@ export default function AppWithProviders() {
   return (
     <ThemeProvider specifiedTheme={data.theme} themeAction="/resources/theme">
       <ProjectProvider>
-        <App />
+        <ViewTransitionsProvider>
+          <App />
+        </ViewTransitionsProvider>
       </ProjectProvider>
     </ThemeProvider>
   );

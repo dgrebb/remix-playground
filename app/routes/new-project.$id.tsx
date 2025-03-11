@@ -8,6 +8,7 @@ import {
 import { getProjectById, type Project } from "~/lib/db/db.server";
 import { useProject } from "~/contexts/ProjectContext";
 import { useEffect } from "react";
+import TransitionLink from "~/components/TransitionLink";
 
 // Define the loader data type
 type LoaderData = {
@@ -181,7 +182,7 @@ export function ErrorBoundary() {
         <h1 className="text-3xl font-bold mb-2">{heading}</h1>
         <p className="text-lg text-gray-600 dark:text-gray-400">{message}</p>
       </div>
-      <Link
+      <TransitionLink
         to="/debug"
         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 inline-flex items-center"
       >
@@ -198,7 +199,7 @@ export function ErrorBoundary() {
           />
         </svg>
         Return to Project List
-      </Link>
+      </TransitionLink>
     </div>
   );
 }

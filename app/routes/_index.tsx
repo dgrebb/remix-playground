@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
+import TransitionLink from "~/components/TransitionLink";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,10 +15,10 @@ export default function Index() {
   return (
     <div className="p-10 max-w-6xl mx-auto">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-4">
+        <h1 className="text-4xl font-extrabold tracking-tight mb-4 project-header">
           Welcome to Remix Playground
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
+        <p className="text-xl text-gray-600 dark:text-gray-400 project-description">
           A sandbox for experimenting with Remix features
         </p>
       </div>
@@ -54,15 +54,17 @@ function Card({
   buttonText: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-xl font-bold mb-2">{title}</h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">{description}</p>
-      <Link
+    <div className="project-card bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+      <h2 className="text-xl font-bold mb-2 project-title">{title}</h2>
+      <p className="text-gray-600 dark:text-gray-400 mb-6 project-description">
+        {description}
+      </p>
+      <TransitionLink
         to={to}
         className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-150 ease-in-out"
       >
         {buttonText}
-      </Link>
+      </TransitionLink>
     </div>
   );
 }
