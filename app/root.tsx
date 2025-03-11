@@ -26,6 +26,7 @@ import { useEffect } from "react";
 
 import "./tailwind.css";
 import "./styles/transitions.css";
+import "./styles/markdown.css";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),

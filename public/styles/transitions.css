@@ -1,0 +1,108 @@
+/* CSS View Transitions Styles */
+
+/* Native View Transitions API Styles */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+}
+
+/* Fade transition for root */
+::view-transition-old(root) {
+  animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both fade-out;
+}
+
+::view-transition-new(root) {
+  animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both fade-in;
+}
+
+/* CSS-based fallback transitions */
+.is-transitioning {
+  position: relative;
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Forward navigation animations */
+.is-transitioning.is-navigating-forward {
+  animation-name: slide-from-right;
+}
+
+/* Backward navigation animations */
+.is-transitioning.is-navigating-backward {
+  animation-name: slide-from-left;
+}
+
+/* Project card transitions */
+.project-card {
+  view-transition-name: project-card;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Common animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Animation for page content */
+.page-content {
+  transition: opacity 0.3s ease;
+}
+
+.is-transitioning .page-content {
+  opacity: 0;
+}
+
+/* Common transition for all elements that should animate */
+.transition-link {
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Additional element-specific transitions */
+.project-title {
+  view-transition-name: project-title;
+}
+
+.project-description {
+  view-transition-name: project-description;
+}
+
+.project-header {
+  view-transition-name: project-header;
+}

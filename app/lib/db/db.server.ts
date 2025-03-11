@@ -5,6 +5,7 @@ import { resolve } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { join } from "path";
 import fs from "fs";
+import { eq } from "drizzle-orm";
 
 // Ensure this is only run on the server
 if (typeof window !== "undefined") {
@@ -17,6 +18,7 @@ export interface Project {
   uuid: string;
   name: string;
   description?: string;
+  requirements?: string;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -59,6 +61,7 @@ export function resetDatabase() {
         uuid TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         description TEXT,
+        requirements TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -165,7 +168,8 @@ export async function getProjectById(
 // Helper function to create a new project with proper database column names
 export async function createProject(
   name: string,
-  description: string = ""
+  description: string = "",
+  requirements: string = ""
 ): Promise<Project> {
   try {
     const uuid = uuidv4();
@@ -175,11 +179,11 @@ export async function createProject(
     sqlite
       .prepare(
         `
-      INSERT INTO projects (uuid, name, description, created_at, updated_at) 
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO projects (uuid, name, description, requirements, created_at, updated_at) 
+      VALUES (?, ?, ?, ?, ?, ?)
     `
       )
-      .run(uuid, name, description, now, now);
+      .run(uuid, name, description, requirements, now, now);
 
     // Fetch the inserted project by UUID (safer than relying on last_insert_rowid())
     const result = sqlite
@@ -201,16 +205,23 @@ export async function createProject(
 }
 
 // Insert a project - returns the inserted project
-export function insertProject(name: string, description: string = ""): Project {
+export function insertProject(
+  name: string,
+  description: string = "",
+  requirements: string = ""
+): Project {
   try {
     const uuid = uuidv4();
     const now = new Date().toISOString();
 
     const result = sqlite
       .prepare(
-        "INSERT INTO projects (id, uuid, name, description, created_at, updated_at) VALUES (NULL, ?, ?, ?, ?, ?) RETURNING *"
+        "INSERT INTO projects (id, uuid, name, description, requirements, created_at, updated_at) VALUES (NULL, ?, ?, ?, ?, ?, ?) RETURNING *"
       )
-      .get(uuid, name, description, now, now) as Record<string, any>;
+      .get(uuid, name, description, requirements, now, now) as Record<
+      string,
+      any
+    >;
 
     console.log(`✅ Inserted project: ${JSON.stringify(result)}`);
 
@@ -245,5 +256,41 @@ export function deleteProjects(uuids: string[]): boolean {
   } catch (error) {
     console.error("Error deleting multiple projects:", error);
     return false;
+  }
+}
+
+/**
+ * Updates the requirements document for a project
+ * @param uuid The project UUID
+ * @param requirements The markdown content for requirements
+ * @returns Updated project or null if not found
+ */
+export async function updateProjectRequirements(
+  uuid: string,
+  requirements: string
+): Promise<Project | null> {
+  try {
+    // First check if the project exists
+    const project = await getProjectById(uuid);
+    if (!project) {
+      console.log(`❌ Project not found with UUID: "${uuid}"`);
+      return null;
+    }
+
+    // Update the project requirements
+    const updatedProject = await db
+      .update(schema.projects)
+      .set({
+        requirements,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.projects.uuid, uuid))
+      .returning()
+      .get();
+
+    return snakeToCamel(updatedProject) as Project;
+  } catch (error) {
+    console.error(`Error updating project requirements:`, error);
+    return null;
   }
 }

@@ -1,13 +1,21 @@
-import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { json, LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import {
   useLoaderData,
   useRouteError,
   isRouteErrorResponse,
+  Form,
+  useSubmit,
+  useNavigation,
 } from "@remix-run/react";
-import { getProjectById, type Project } from "~/lib/db/db.server";
+import {
+  getProjectById,
+  updateProjectRequirements,
+  type Project,
+} from "~/lib/db/db.server";
 import { useProject } from "~/contexts/ProjectContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import TransitionLink from "~/components/TransitionLink";
+import { MarkdownEditor } from "~/components/MarkdownEditor";
 
 // Define the loader data type
 type LoaderData = {
@@ -38,9 +46,51 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return json({ project });
 }
 
+export async function action({ request, params }: ActionFunctionArgs) {
+  const { id } = params;
+  if (!id) {
+    throw new Response("Project ID is required", { status: 400 });
+  }
+
+  const formData = await request.formData();
+  const requirements = formData.get("requirements") as string;
+
+  const updatedProject = await updateProjectRequirements(id, requirements);
+
+  if (!updatedProject) {
+    throw new Response("Failed to update project requirements", {
+      status: 500,
+    });
+  }
+
+  return json({ success: true, project: updatedProject });
+}
+
 export default function ProjectDetails() {
   const { project } = useLoaderData<typeof loader>() as LoaderData;
   const { setCurrentProject } = useProject();
+  const submit = useSubmit();
+  const navigation = useNavigation();
+  const [requirements, setRequirements] = useState(project.requirements || "");
+  const [isDirty, setIsDirty] = useState(false);
+  const isUpdating = navigation.state === "submitting";
+
+  // Auto-save the requirements after a delay
+  useEffect(() => {
+    if (isDirty && !isUpdating) {
+      const timer = setTimeout(() => {
+        handleSave();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [requirements, isDirty, isUpdating]);
+
+  const handleSave = () => {
+    const formData = new FormData();
+    formData.append("requirements", requirements);
+    submit(formData, { method: "post" });
+    setIsDirty(false);
+  };
 
   // Sync server data with client context
   useEffect(() => {
@@ -51,6 +101,8 @@ export default function ProjectDetails() {
         id: String(project.id),
         // Ensure description is always a string
         description: project.description || "",
+        // Ensure requirements is always a string
+        requirements: project.requirements || "",
         // Convert string dates back to Date objects for the context
         createdAt: new Date(project.createdAt),
         updatedAt: new Date(project.updatedAt),
@@ -80,7 +132,7 @@ export default function ProjectDetails() {
         </TransitionLink>
       </div>
 
-      <div className="project-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all">
+      <div className="project-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 project-header">
@@ -148,6 +200,39 @@ export default function ProjectDetails() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="project-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+          Requirements Document
+        </h2>
+
+        <Form method="post" className="mt-4">
+          <MarkdownEditor
+            initialValue={requirements}
+            onChange={(value) => {
+              setRequirements(value);
+              setIsDirty(true);
+            }}
+          />
+
+          <div className="mt-4 flex justify-between items-center">
+            <p className="text-sm text-gray-500">
+              {isDirty ? "Unsaved changes" : "All changes saved"}
+            </p>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!isDirty || isUpdating}
+              className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isUpdating ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {isUpdating ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </Form>
       </div>
     </div>
   );

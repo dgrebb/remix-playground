@@ -6,6 +6,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  requirements?: string;
   createdAt: Date;
   updatedAt: Date;
 }
