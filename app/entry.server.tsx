@@ -12,6 +12,9 @@ import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
+// Database schema is now automatically initialized when the server starts
+// No need to call an initialization function
+
 const ABORT_DELAY = 5_000;
 
 export default function handleRequest(

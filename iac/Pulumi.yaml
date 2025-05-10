@@ -1,0 +1,3 @@
+name: remix-ai-chat
+runtime: nodejs
+description: Infrastructure for Remix AI Chat application 
